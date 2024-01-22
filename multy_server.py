@@ -49,9 +49,15 @@ while True:
                 elif data.startswith("send "):
                     parts = data.split(" ",2)
                     if len(parts) == 3:
-                        target_name, message_content = data[1], data[2]
-                        pass #ToDo: see how to send messages to users                    
-                
+                        target_name, message_content = parts[1], parts[2]
+                        for user_sokcet, username in clients_name.items():
+                            if  target_name == username:
+                                user_sokcet.send(message_content.encode())
+                                break
+                                
+                        else:
+                            current_socket.send("User not found".encode())
+                            continue
                 else:
                     current_socket.send("Unknown command ".encode())
                     continue # skip adding command to message to send
