@@ -51,7 +51,7 @@ while True:
                     if len(parts) == 3:
                         target_name, message_content = parts[1], parts[2]
                         for user_sokcet, username in clients_name.items():
-                            if  target_name == username:
+                            if target_name == username:
                                 user_sokcet.send(message_content.encode())
                                 break
                                 
