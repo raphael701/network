@@ -1,26 +1,33 @@
 import socket
-import select
+import msvcrt
+import sys
 
 my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 my_socket.connect(("127.0.0.1", 5555))
-msg = input("Plz enter something:\n")
-    
-rlist, wlist, xlist = select.select([my_socket], [], [])
-for current in rlist:
-    if current is rlist:
-        connection, data = current.accept()
-        print(data)
+my_socket.setblocking(False)
+
+
+while True:
+    if msvcrt.kbhit():
+        msg = sys.stdin.readline().strip()
+        if msg.lower() == "exit":
+            break
+
+        my_socket.send(msg.encode())
+
+    try:
+        data = my_socket.recv(1024).decode()
+        if data.startswith("NAME "):
+            print("Hello", data.split(" ",1)[1])
         
-while msg != "exit":
-    my_socket.send(msg.encode())
-    data = my_socket.recv(1024).decode()
+        else:
+            print(data)  
 
-
-    if msg.startswith("NAME "):
-        print("Hello",data.split(" ",1)[1])
-    
-    else:
-        print(data)
-    msg = input("Plz enter something:\n")
+    except socket.error:
+        pass
 
 my_socket.close()
+
+
+
+
