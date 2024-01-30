@@ -52,7 +52,7 @@ while True:
                         target_name, message_content = parts[1], parts[2]
                         for user_sokcet, username in clients_name.items():
                             if target_name == username:
-                                user_sokcet.send(f"{target_name} sent:{message_content}".encode())
+                                user_sokcet.send(f"{client_name} sent:{message_content}".encode())
                                 break
                                 
                         else:
