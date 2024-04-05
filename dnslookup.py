@@ -27,24 +27,12 @@ def filter_dns(packet):
 def print_query_name(dns_packet):
     print(dns_packet[DNSQR].qname.decode())
 
-def get_file_data(filename):
-    """Reads the content of a file from the local filesystem and returns it"""
-    
-    try:
-        with open(filename, 'rb') as file:
-            return file.read()
-    
-    except FileNotFoundError:
-        return b"404 Not Found: The requested resource was not found on this server."
-
-
 def validate_http_request(file_path):
     """
     Check if the file path exists and return True if it does, False otherwise
     """
     # Check if the file path exists
     return os.path.exists(file_path)
-
 
 def handle_client(client_socket):
     """ Handles client requests: verifies client's requests are legal HTTP, calls function to handle the requests """
