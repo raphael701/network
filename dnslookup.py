@@ -1,38 +1,9 @@
 import socket
-import os
 from scapy.all import *
+from urllib.parse import urlparse
 
 IP = "127.0.0.1"
 PORT = 80
-# Creating the HTML file
-file_html = open("demo.html", "w")
-
-# Adding the input data to the HTML file
-file_html.write('''<html>
-<head>
-<title>HTML File</title>
-</head> 
-<body>
-<h1>Welcome Finxters</h1>           
-<p>Example demonstrating How to generate HTML Files in Python</p> 
-</body>
-</html>''')
-
-# Saving the data into the HTML file
-file_html.close()
-def filter_dns(packet):
-    if DNSQR in packet:
-        return (packet[DNS].opcode == 0) and (packet[DNSQR].opcode == 0)
-    
-def print_query_name(dns_packet):
-    print(dns_packet[DNSQR].qname.decode())
-
-def validate_http_request(file_path):
-    """
-    Check if the file path exists and return True if it does, False otherwise
-    """
-    # Check if the file path exists
-    return os.path.exists(file_path)
 
 def handle_client(client_socket):
     """ Handles client requests: verifies client's requests are legal HTTP, calls function to handle the requests """
@@ -59,39 +30,39 @@ def handle_client(client_socket):
     client_socket.close()
 
 
+
 def handle_client_request(resource, client_socket):
-    """ Check the required resource, generate proper HTTP response and send to client"""
-    # Construct the full path to the requested resource
-    if resource == "/":
-        resource = "/demo.html"  # Serve demo.html for root URL
+    if resource.startswith("/"):
+        resource = resource[1:]  # Remove the leading "/"
+    the_domain = resource  # Use the resource as the domain
+
+    try:
+        # Perform DNS lookup for the domain
+        ips = socket.gethostbyname_ex(the_domain)[-1]
+        if ips:
+            # Construct the HTTP response header and body
+            http_response_header = "HTTP/1.1 200 OK\r\n"
+            http_response_header += "Content-Type: text/html\r\n"
+            http_response_header += "\r\n"  # End of header
+            
+            http_response_body = "<html>\n<head>\n<title>Resolved IPs</title>\n</head>\n<body>\n"
+            for ip in ips:
+                http_response_body += f"<p>{ip}</p>\n"
+            http_response_body += "</body>\n</html>\n" #End of body
+        
+            # Send the response to the client
+            client_socket.send((http_response_header + http_response_body).encode())
+        
+        else:
+            # No IPs found for domain, send 404 response
+            http_response_header = "HTTP/1.1 404 Not Found\r\n"
+            http_response_header += "Content-Type: text/plain\r\n"
+            http_response_header += "Content-Length: 13\r\n\r\n"
+            http_response_header += "404 Not Found\r\n"
+            client_socket.send(http_response_header.encode())
     
-    filename = resource
-    if os.path.exists(filename):
-        # Read the content of the requested file
-        res_content = get_file_data(filename)
-
-        # Determine the Content-Type based on the file extension
-        content_type = "text/plain"
-        if filename.endswith(".html"):
-            content_type = "text/html"
-
-        # Construct the HTTP response header
-        http_response_header = f"HTTP/1.1 200 OK\r\n"
-        http_response_header += f"Content-Type: {content_type}\r\n"
-        http_response_header += f"Content-Length: {len(res_content)}\r\n"
-        http_response_header += "\r\n"  # End of header
-
-        # Send the response to the client
-        client_socket.send(http_response_header.encode() + res_content)
-    
-    else:
-        # File not found, send a 404 response
-        http_response_header = "HTTP/1.1 404 Not Found\r\n"
-        http_response_header += "Content-Type: text/plain\r\n"
-        http_response_header += "Content-Length: 13\r\n\r\n"
-        http_response_header += "404 Not Found\r\n"
-        client_socket.send(http_response_header.encode())
-
+    except Exception as e:
+        print(f"Error performing DNS lookup: {str(e)}")
 
 def main():
     # Open a socket and loop forever while waiting for clients
